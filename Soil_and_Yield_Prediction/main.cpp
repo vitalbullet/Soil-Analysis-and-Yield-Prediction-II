@@ -76,67 +76,17 @@ int main() {
 	//dataset.display_samples();
 
 	//Create a Population
-	//Old Way
 	std::vector<std::array<std::vector<double>, CLUSTER_HEADS>>
 		current_population(MAX_POPULATION, std::array < std::vector<double>, CLUSTER_HEADS >{std::vector<double>(dataset.get_number_of_features())}),
 		next_population(MAX_POPULATION, std::array < std::vector<double>, CLUSTER_HEADS >{std::vector<double>(dataset.get_number_of_features())});
-
-	//std::cout << current_population.size() << ' ' << next_population.size() << '\n';
-	//Not Working
-	//std::array<std::array<std::array<double, MAX_FEATURES>, CLUSTER_HEADS>, MAX_POPULATION> current_population{}, next_population{};
 
 	//Filling the Population
 	//for (auto& soil : current_population)	std::ranges::generate(soil.begin(), soil.end(), rng);
 	for (auto& soil : current_population) for (auto& cluster_head : soil) std::ranges:: generate(std::begin(cluster_head), std::end(cluster_head), double_rng);
 
-	/*for (auto soil : current_population) {
-		for (auto feature : soil) std::cout << feature << ' ';
-		std::cout << '\n';
-	}*/
-
 	//Algorithm Starts here
 	auto crossover_probability = double_rng() * 0.5 + 0.5;		//Range of Crossover Probability = [0,1]
 	auto differential_weight = double_rng() + 1.0;				//Range of Differential Wight = [0,2]
-
-	/* Method 1: using thread pool*/
-	//std::cerr << "Adding elements to the queue\n";
-	//thread_safe_queue<int> work_queue;
-	//for (auto i = 0; i < (int)MAX_POPULATION; ++i)	work_queue.push(i);
-
-	//std::atomic<int> signal = MAX_POPULATION, generation=MAX_GENERATION;
-	//std::thread master_tasker_thread{ [&]()-> void {
-	//	while (true) {
-	//		if (signal.load(std::memory_order_acquire)==0) {
-	//			//Do soemthing
-	//			if (generation.fetch_sub(1, std::memory_order_acq_rel) == 1)
-	//				break;
-	//			for (auto i = 0; i < (int)MAX_POPULATION; ++i)	work_queue.push(i);
-	//			signal.store(MAX_POPULATION, std::memory_order_release);
-	//		}
-	//		else {
-	//			std::this_thread::yield;
-	//		}
-	//	}
-	//	std::cerr << "Master Tasker Ending...\n";
-	//} };
-	//master_tasker_thread.detach();
-
-	//auto slave_func = [&]()->void {
-	//	std::shared_ptr<int> dataptr;
-	//	while (generation.load(std::memory_order_acquire) && (dataptr=work_queue.pop())) {
-	//		while (signal.fetch_sub(1,std::memory_order_acq_rel)<=0)	std::this_thread::yield;
-	//		std::cerr << "Thread ID: " << std::this_thread::get_id() << " did something with :i" << *dataptr << '\n';
-	//	}
-	//	std::cerr << "Thread ID: " << std::this_thread::get_id() << " is gonna retire\n";
-	//};
-
-	//
-	//std::cerr << std::thread::hardware_concurrency() << std::endl;
-	//std::vector<std::thread> slaves;
-	//for (int i = 0; i < std::thread::hardware_concurrency(); ++i)	slaves.push_back(std::thread{ slave_func });
-	//for (auto& it : slaves)	it.join();
-	
-	/*Method 2: using only atomics*/
 
 	auto program_start = std::chrono::high_resolution_clock::now();
 
@@ -169,7 +119,7 @@ int main() {
 				while (true) {
 					int index;
 					if ((index = population_indexer.fetch_add(1, std::memory_order_acq_rel)) < MAX_POPULATION) {
-						//std::cout << "index: " << index << '\n';
+
 						std::unordered_set<int> bc;
 						while(bc.size()<2){
 							auto x = int_rng();
@@ -180,24 +130,9 @@ int main() {
 						auto r = double_rng() * 0.5 + 0.5;
 						auto b = *bc.begin(); bc.erase(bc.begin());
 						auto c = *bc.begin(); bc.erase(bc.begin());
-						//std::cout << "b: " << b << ", c: " << c << '\n';
+
 						if (r <= crossover_probability) {
 							std::array<std::vector<double>, CLUSTER_HEADS> next_gen{ std::vector<double>(MAX_FEATURES,0) };
-
-							/*
-							std::transform(std::begin(current_population[b]), std::end(current_population[b]), std::begin(current_population[c]), std::begin(next_gen), [&differential_weight](const auto& b, const auto& c) {
-								std::vector<double> temp(MAX_FEATURES, 0);
-								std::transform(std::begin(b), std::end(b), std::begin(c), std::begin(temp), [&differential_weight](const double& a1, const double& a2)->double{
-									return differential_weight * (a1 - a2);
-								});
-								return temp;
-							});
-							std::transform(std::begin(current_population[index]), std::end(current_population[index]), std::begin(next_gen), std::begin(next_gen), [](const auto& a, const auto& b) {
-								std::vector<double> temp(MAX_FEATURES, 0);
-								std::transform(std::begin(a), std::end(a), std::begin(b), std::begin(temp), std::plus<>{});
-								return temp;
-							});
-							*/
 
 							for (auto cluster_index = 0; cluster_index < CLUSTER_HEADS; ++cluster_index) {
 								std::transform(std::begin(current_population[b][cluster_index]),
@@ -232,17 +167,6 @@ int main() {
 			}
 		}
 
-		//while (generation.load(std::memory_order_acquire)) {
-		//	int index;
-		//	if ((index = population_indexer.fetch_add(1, std::memory_order_acq_rel)) < MAX_POPULATION) {
-		//		//Perform action on that index;
-		//		/*cout_mu.lock();
-		//		std::cerr << "Thread: " << std::this_thread::get_id() << " did some work on index: " << index << std::endl;
-		//		cout_mu.unlock();*/
-		//		
-		//	}
-		//	//std::this_thread::yield();
-		//}
 		cout_mu.lock();
 		std::cerr << "Thread: " << std::this_thread::get_id() << " retiring from Slavery, it was up for: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_time) << std::endl;
 		cout_mu.unlock();
@@ -260,11 +184,6 @@ int main() {
 
 	std::cout << "BEST CANDIDATE's Fitness Value: " << calculate_fitness_value(*best_candidate) << " found at index: " << best_candidate - std::begin(next_population) << '\n';
 	std::cout << "WORST CANDIDATE's Fitness Value: " << calculate_fitness_value(*worst_candidate) << " found at index: " << worst_candidate - std::begin(next_population) << '\n';
-
-	/*for (auto it : current_population)	std::cout << calculate_fitness_value(it) << ' ';
-	std::cout << '\n';
-	for (auto it : next_population) std::cout << calculate_fitness_value(it) << ' ';
-	std::cout << '\n';*/
 
 	auto program_end = std::chrono::high_resolution_clock::now();
 	std::cerr <<"Total ms Program ran for: "<< std::chrono::duration_cast<std::chrono::milliseconds>(program_end - program_start);
