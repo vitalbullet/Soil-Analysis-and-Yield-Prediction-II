@@ -9,11 +9,11 @@
 #include<utility>
 #include<unordered_set>
 
-#define MAX_POPULATION		((int)1e6)
-#define MAX_GENERATION		((int)1e2)
-#define CLUSTER_HEADS		3
-#define MAX_FEATURES		11
-#define NUMBER_OF_THREADS	std::thread::hardware_concurrency()
+const int MAX_POPULATION = 1e4;
+const int MAX_GENERATION = 1e2;
+const int MAX_CLUSTER_HEADS = 3;
+const int MAX_FEATURES = 11;
+const int MAX_THREADS = std::thread::hardware_concurrency();
 
 std::mutex cout_mu;
 
@@ -31,12 +31,12 @@ auto int_rng() {
 	return dis(engine);
 }
 
-auto calculate_fitness_value(const std::array<std::vector<double>, CLUSTER_HEADS>& cluster_heads) {
+auto calculate_fitness_value(const std::array<std::vector<double>, MAX_CLUSTER_HEADS>& cluster_heads) {
 
 	//Calculating the mean of cluster heads
 	std::vector<double> cluster_mean(MAX_FEATURES, 0);
 	for (const auto& cluster_head : cluster_heads) std::transform(std::begin(cluster_head), std::end(cluster_head), std::begin(cluster_mean), std::begin(cluster_mean), std::plus<>{});
-	for (auto& it : cluster_mean) it /= CLUSTER_HEADS;
+	for (auto& it : cluster_mean) it /= MAX_CLUSTER_HEADS;
 
 	//Calculating the variance of cluster heads from the mean
 	auto fitness_value = (double)(0);
@@ -50,24 +50,6 @@ auto calculate_fitness_value(const std::array<std::vector<double>, CLUSTER_HEADS
 	return fitness_value;
 }
 
-auto calculate_fitness_value_v2(const std::array<std::vector<double>, CLUSTER_HEADS>& cluster_heads) {
-	std::vector<double> cluster_mean(MAX_FEATURES, 0);
-	for (auto cluster_index = 0; cluster_index < CLUSTER_HEADS; ++cluster_index) {
-		for (auto feature_index = 0; feature_index < MAX_FEATURES; ++feature_index) {
-			cluster_mean[feature_index] += cluster_heads[cluster_index][feature_index];
-		}
-	}
-	for (auto& it : cluster_mean)	it /= CLUSTER_HEADS;
-
-	auto fitness_value = (double)(0);
-	for (auto cluster_index = 0; cluster_index < CLUSTER_HEADS; ++cluster_index) {
-		for (auto feature_index = 0; feature_index < MAX_FEATURES; ++feature_index) {
-			fitness_value += (cluster_heads[cluster_index][feature_index] - cluster_mean[feature_index])*(cluster_heads[cluster_index][feature_index]-cluster_mean[feature_index]);
-		}
-	}
-	return fitness_value;
-}
-
 int main() {
 	DataSet dataset;	dataset.generate_meta_data();
 	//dataset.debug_samples();
@@ -76,9 +58,9 @@ int main() {
 	//dataset.display_samples();
 
 	//Create a Population
-	std::vector<std::array<std::vector<double>, CLUSTER_HEADS>>
-		current_population(MAX_POPULATION, std::array < std::vector<double>, CLUSTER_HEADS >{std::vector<double>(dataset.get_number_of_features())}),
-		next_population(MAX_POPULATION, std::array < std::vector<double>, CLUSTER_HEADS >{std::vector<double>(dataset.get_number_of_features())});
+	std::vector<std::array<std::vector<double>, MAX_CLUSTER_HEADS>>
+		current_population(MAX_POPULATION, std::array < std::vector<double>, MAX_CLUSTER_HEADS >{std::vector<double>(dataset.get_number_of_features())}),
+		next_population(MAX_POPULATION, std::array < std::vector<double>, MAX_CLUSTER_HEADS >{std::vector<double>(dataset.get_number_of_features())});
 
 	//Filling the Population
 	//for (auto& soil : current_population)	std::ranges::generate(soil.begin(), soil.end(), rng);
@@ -132,9 +114,9 @@ int main() {
 						auto c = *bc.begin(); bc.erase(bc.begin());
 
 						if (r <= crossover_probability) {
-							std::array<std::vector<double>, CLUSTER_HEADS> next_gen{ std::vector<double>(MAX_FEATURES,0) };
+							std::array<std::vector<double>, MAX_CLUSTER_HEADS> next_gen{ std::vector<double>(MAX_FEATURES,0) };
 
-							for (auto cluster_index = 0; cluster_index < CLUSTER_HEADS; ++cluster_index) {
+							for (auto cluster_index = 0; cluster_index < MAX_CLUSTER_HEADS; ++cluster_index) {
 								std::transform(std::begin(current_population[b][cluster_index]),
 									std::end(current_population[b][cluster_index]),
 									std::begin(current_population[c][cluster_index]),
@@ -173,7 +155,7 @@ int main() {
 	};
 
 	std::vector<std::thread> slaves;
-	for (int i = 0; i < NUMBER_OF_THREADS; ++i)	slaves.push_back(std::thread{slave_function});
+	for (int i = 0; i < MAX_THREADS; ++i)	slaves.push_back(std::thread{slave_function});
 	for (auto& it : slaves)	it.join();
 
 	auto best_candidate = std::max_element(std::begin(next_population), std::end(next_population), [](const auto& pop1, const auto& pop2)->auto{
@@ -182,8 +164,9 @@ int main() {
 	auto worst_candidate = std::min_element(std::begin(next_population), std::end(next_population), [](const auto& pop1, const auto& pop2)->auto{
 		return calculate_fitness_value(pop1) < calculate_fitness_value(pop2); });
 
-	std::cout << "BEST CANDIDATE's Fitness Value: " << calculate_fitness_value(*best_candidate) << " found at index: " << best_candidate - std::begin(next_population) << '\n';
-	std::cout << "WORST CANDIDATE's Fitness Value: " << calculate_fitness_value(*worst_candidate) << " found at index: " << worst_candidate - std::begin(next_population) << '\n';
+	std::cout << "BEST CANDIDATE found at index: " << best_candidate - std::begin(next_population) << '\n';
+	std::cout << "WORST CANDIDATE found at index: " << worst_candidate - std::begin(next_population) << '\n';
+
 
 	auto program_end = std::chrono::high_resolution_clock::now();
 	std::cerr <<"Total ms Program ran for: "<< std::chrono::duration_cast<std::chrono::milliseconds>(program_end - program_start);
