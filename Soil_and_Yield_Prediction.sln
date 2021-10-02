@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31624.102
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Soil_and_Yield_Prediction", "Soil_and_Yield_Prediction\Soil_and_Yield_Prediction.vcxproj", "{7316C50F-AA7B-4C7C-96F9-35391D44FA05}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7316C50F-AA7B-4C7C-96F9-35391D44FA05}.Debug|x64.ActiveCfg = Debug|x64
+		{7316C50F-AA7B-4C7C-96F9-35391D44FA05}.Debug|x64.Build.0 = Debug|x64
+		{7316C50F-AA7B-4C7C-96F9-35391D44FA05}.Debug|x86.ActiveCfg = Debug|Win32
+		{7316C50F-AA7B-4C7C-96F9-35391D44FA05}.Debug|x86.Build.0 = Debug|Win32
+		{7316C50F-AA7B-4C7C-96F9-35391D44FA05}.Release|x64.ActiveCfg = Release|x64
+		{7316C50F-AA7B-4C7C-96F9-35391D44FA05}.Release|x64.Build.0 = Release|x64
+		{7316C50F-AA7B-4C7C-96F9-35391D44FA05}.Release|x86.ActiveCfg = Release|Win32
+		{7316C50F-AA7B-4C7C-96F9-35391D44FA05}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {553B8660-E600-46C2-A42C-FB3EBF04D19B}
+	EndGlobalSection
+EndGlobal
